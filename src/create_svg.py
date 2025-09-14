@@ -11,11 +11,11 @@ def main(input_file, output_file, pop_file):
         popularity[artist] = int(pop)
 
     artists = []
-    genres = []
+    genres = {}
     for genre in input_file:
         artists_for_genre = list(zip(genre["customdata"], genre["x"], genre["y"]))
         artists.extend(artists_for_genre)
-        genres.append(artists_for_genre)
+        genres[genre["name"]] = artists_for_genre
 
     minx = min(artist[1] for artist in artists)
     miny = min(artist[2] for artist in artists)
@@ -62,38 +62,67 @@ def main(input_file, output_file, pop_file):
                         </style>
                      """)
 
+    output_file.write("""<defs>""")
     for color, genre in zip(colors, genres):
+        output_file.write(f"""
+                          <radialGradient id="{genre}">
+                            
+                          <stop offset="10%" stop-color="gold" />
+      <stop offset="95%" stop-color="red" />
+                          </radialGradient>
+
+                          """)
+    output_file.write("</defs>")
+
+    output_file.write("<g>")
+
+    for genre_name, genre in genres.items():
+        print(genre_name)
         for artist in genre:
-            artist_name = artist[0][0]
+            artist_name = artist[0][0].replace("'", " ").replace('"', " ")
             if artist_name not in popularity:
                 print(artist_name)
                 continue
             artist_pop = popularity[artist_name]
             output_file.write(
-                f'<circle cx="{artist[1]}" cy="{artist[2]}" r="{0.01}" fill="{color}" opacity=".5" />'
+                f'<circle cx="{artist[1]}" cy="{artist[2]}" r="{math.sqrt(artist_pop) / 200}"  opacity=".5" fill="url(\'#{genre_name}\') id="{artist_name}/>'
             )
 
+    output_file.write("</g>")
     spatial_hash = {}
 
     for artist in artists:
-        coords = (int(artist[1]), int(artist[2]))
-        if coords not in spatial_hash:
-            spatial_hash[coords] = [artist[0]]
+        coords = (int(artist[1] + 0.5), int(artist[2] + 0.5))
+        if coords not in spatial_hash:  # output_file.write(
+            #     f'<text x="{most_pop_artist[1] + 0.01}" y="{most_pop_artist[2]}" font-size=".1" class="label">{most_pop_artist[0][0]}</text>'
+            # )
+            spatial_hash[coords] = [artist]
         else:
-            spatial_hash[coords].append(artist[0])
+            spatial_hash[coords].append(artist)
 
-    # for artist in artists:
-    #     artist_name = artist[0][0]
-    #     if artist_name not in popularity:
-    #         print(artist_name)
-    #         continue
-    #     artist_pop = popularity[artist_name]
-    #     if artist_pop > 150:
-    #         output_file.write(
-    #             f'<text x="{artist[1] + 0.01}" y="{artist[2]}" font-size="{math.log(artist_pop) / 160}" class="label">{artist_name}</text>'
-    #         )
+    for artists in spatial_hash.values():
+        if len(artists) == 0:
+            continue
+        max_pop = -1
+        most_pop_artist = []
 
-    # output_file.write("</svg>")
+        for artist in artists:
+            artist_name = artist[0][0]
+            if artist_name not in popularity:
+                print(artist_name)
+                continue
+            artist_pop = popularity[artist_name]
+            if artist_pop > max_pop:
+                max_pop = artist_pop
+                most_pop_artist = artist
+
+        print(most_pop_artist)
+
+        # output_file.write(
+        #     f'<text x="{most_pop_artist[1] + 0.01}" y="{most_pop_artist[2]}" font-size=".1" class="label">{most_pop_artist[0][0]}</text>'
+        # )
+
+    output_file.write("</svg>")
 
 
 if __name__ == "__main__":
