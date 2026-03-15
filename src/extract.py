@@ -1,5 +1,3 @@
-
-
 from alive_progress import alive_bar
 import requests
 
@@ -17,57 +15,68 @@ def extract_tracks(api_request: str, access_token: str) -> list[dict]:
     api_response = make_http_request(api_request, access_token)
     tracks = []
 
-    for item in api_response['items']:
-        track = item['track']
-        if (track is None):
+    for item in api_response["items"]:
+        track = item["track"]
+        if track is None:
             continue
 
         track_item = {}
 
-        track_item['artists'] = []
+        track_item["artists"] = []
 
-        if 'artists' in track:
-            for artist in track['artists']:
+        if "artists" in track:
+            for artist in track["artists"]:
                 # if ('name' in artist):
                 # this above line may not be necessary
-                track_item['artists'].append(artist['name'])
+                track_item["artists"].append(artist["name"])
 
         # concatenates artist names together into string
-        track_item['title'] = track['name']
-        track_item['id'] = track['id']
+        track_item["title"] = track["name"]
+        track_item["id"] = track["id"]
 
         tracks.append(track_item)
 
     return tracks
 
+
 # there is an average of about 9 kb of data per playlist
 
 
-def extract_playlists(api_request: str, access_token: str, output_file, max_playlists=1000):
+def extract_playlists(
+    api_request: str,
+    access_token: str,
+    output_file,
+    max_playlists=1000,
+):
 
     next_page: str = api_request  # api request for next page to be analyzed
     # starts with first page
 
-    num_playlists = 0
+    output_file.fseek(0)
+    prev_playlists = output_file.read().splitlines()
+    num_playlists = len(prev_playlists)
 
     # iterate through pages of search result
     with alive_bar(max_playlists) as bar:
-        while (not next_page is None):
-
+        while next_page is not None:
             # request current page
             api_response = make_http_request(next_page, access_token)
-            current_page = api_response['playlists']['items']
-            next_page = api_response['playlists']['next']
+            current_page = api_response["playlists"]["items"]
+            next_page = api_response["playlists"]["next"]
 
             # process all playlists on current page
             for playlist in current_page:
-                playlist_id = playlist['id']
+                playlist_id = playlist["id"]
                 # api url for tracks in playlist
-                output_file.write(playlist_id + '\n')
+                if playlist_id in prev_playlists:
+                    continue
+                output_file.write(playlist_id + "\n")
                 bar()
                 num_playlists += 1
 
-            if (num_playlists >= max_playlists):
+            if num_playlists >= max_playlists:
                 break
 
-    print(f'{num_playlists} found.')
+    print(
+        f"{num_playlists} total playlists found. {num_playlists - len(prev_playlists)} new playlists found."
+    )
