@@ -1,6 +1,6 @@
 # Spotify Genre Classifier
 
-A data pipeline and unsupervised machine learning project that uses the Spotify Web API to classify artists by genre and surface micro-genre patterns across large-scale playlist data.
+A data pipeline and unsupervised machine learning project that uses the Spotify Web API to classify artists by genre and surface micro-genre patterns across large-scale playlist data. Read the [write-up](https://abhilashatandon.com/blog/spotify-vis/) on my blog or see the [interactive visualization](https://abhilashatandon.com/projects/spotify_artists/). 
 
 ## Overview
 
